@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The note · RH in Lean</title>
+<meta name="description" content="A reader's guide to Levent Alpöge's four page note announcing the proof: Stepanov's method, chains of theta lifts, and the 20 step timeline.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<link rel="stylesheet" href="assets/style.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<script defer src="assets/site.js"></script>
+</head>
+<body>
+<div class="layout">
+<main class="content">
+<p class="eyebrow">Context</p>
+<h1>The note</h1>
+<p class="lede">Alpöge announced the result in a four page note, <a href="https://alpo.ge/remark.pdf">remark.pdf</a>, rather than a paper. This page summarizes it. It is a paraphrase: read the note itself for his words, and treat the mathematical glosses here as approximate.</p>
+
+<div class="callout note"><p><strong>Source.</strong> remark.pdf, 245,114 bytes, SHA-256 <code>3fc97784b71ddd44ff8aa0a177e99622a1c61b13cfa843a0989ee4a7a0cfeb8d</code>. Nothing on this page is derived from the Lean code.</p></div>
+
+<h2 id="announcement">The announcement</h2>
+<ul>
+<li>Alpöge writes that he believes he has, working with Claude, discovered a proof of the Riemann Hypothesis, that the method "easily extends" to the Generalized Riemann Hypothesis, and that he expects the Extended Riemann Hypothesis with more time.</li>
+<li>He states that the arguments have been formalized in Lean without assumptions, and that the formalization is finished.</li>
+<li>He describes Claude as having "far outpaced" him near the end, and says he guided the work toward the right analogue of a toy setting.</li>
+<li>He expects the argument to be "massively simplified", plans to write it up properly, and chose to release only the Lean code. A machine generated exposition would exceed 250,000 pages, which he calls inappropriate to post.</li>
+</ul>
+
+<h2 id="idea">The central idea</h2>
+<h3 id="stepanov">Stepanov's method and multiplicity</h3>
+<p>Stepanov's 1969 proof of the Riemann Hypothesis for curves over finite fields constructs an auxiliary function that vanishes to high order (multiplicity) at every rational point of the curve. Comparing its degree with the number of zeros counted with multiplicity bounds the number of points, which is the Riemann Hypothesis for the curve. The note calls the new argument "a descendant of Stepanov's".</p>
+<p>The obstacle over \(\mathbb{Z}\) is that multiplicity "corresponds to something like differentiating whole numbers". There is no derivative in the integer direction.</p>
+
+<h3 id="theta">Chains of theta lifts</h3>
+<p>Fourier analytic ideas in a toy setting led to <em>chaining theta lifts</em>: transferring automorphic forms along a sequence of groups</p>
+<div class="math-display">$$U(X_0) \to U(X_1) \to \cdots \to U(X_m)$$</div>
+<p>between totally definite unitary groups, where each lift plays the role of one more order of vanishing. The note's highlighted line: for a von Mangoldt sum of length \(X\), the suggested length of the chain is \(m \approx \sqrt{X}\). In the note's words, "And yet, what else could it be?"</p>
+
+<h3 id="ingredients">Named ingredients</h3>
+<p>The note mentions, among others: a Stepanov type determinant; positivity via determinants; the explicit formula of Guinand and Weil, which supplies a sign; Gan-Gross-Prasad periods; the Chowla-Selberg formula; Weyl's law; the Siegel mass formula; Iwasawa towers; a seesaw identity identifying the period of the iterated lift with a Bessel period (Rallis); the Bost slope inequality from Arakelov geometry; a relative trace formula; a weakened form of Vandiver's conjecture; and Behrend's construction of sets without arithmetic progressions.</p>
+
+<h2 id="timeline">Timeline</h2>
+<p>The note lists 20 steps, provided by Claude after a search of the work, all in 2026. They are shown in the note's order (which is not strictly chronological), with brief paraphrases.</p>
+<ul class="timeline">
+<li><span class="date">6 Oct</span><span class="num">#1</span><br>Stepanov determinant.</li>
+<li><span class="date">9 Oct</span><span class="num">#2</span><br>An invariant derivation \(D\) on a CM curve, with \(D^p \equiv 0\) for primes \(p\) inert in the CM field, and high divisibility by \(p\) of iterated derivatives of a theta value.</li>
+<li><span class="date">19 Oct onward</span><span class="num">#3</span><br>An identity \(qN = M^k + R\) built from the "path" quadric \(x_1x_2 + \cdots + x_{k-1}x_k\), seeking automorphy via theta functions on a sixfold cover of \(\mathrm{GL}_5\).</li>
+<li><span class="date">6 Oct onward</span><span class="num">#4</span><br>Positivity \(W(1_S) \ge 0\) via a determinant, read as Stepanov with multiplicity one; then bootstrap.</li>
+<li><span class="date">20 Oct</span><span class="num">#5</span><br>Switch definitively to a weighted von Mangoldt sum; Guinand-Weil gives the sign; a variance test function trick.</li>
+<li><span class="date">8 Oct</span><span class="num">#6</span><br>A positivity inequality for \(W\) applied to indicator functions, which the note says "gives \(A positivity statement giving a zero free region beyond \(1 - \eta\).gt; 1 - \eta\)".</li>
+<li><span class="date">14 Oct</span><span class="num">#7</span><br>Determinants for weights containing the desired GGP periods, with interlacing and non interlacing weights.</li>
+<li><span class="date">15 Nov</span><span class="num">#8</span><br>Iterated theta lifts between totally definite unitary groups, \(\pi \mapsto \pi \boxplus \mu_j[t]\), winning multiplicity \(m\). Take \(m\) like \(\sqrt X\).</li>
+<li><span class="date">15 Nov</span><span class="num">#9</span><br>Norms of the lifts, level, and cancellation of order \(m\) terms, with divisibility via Chowla-Selberg, Weyl and the Siegel mass formula.</li>
+<li><span class="date">15 Nov</span><span class="num">#10</span><br>A sufficient lower bound on the divisibility of the \(m\) fold iterated lift.</li>
+<li><span class="date">6 Oct</span><span class="num">#11</span><br>An Iwasawa tower, by analogy with pigeonhole over \(\mathbb F_{q^n}/\mathbb F_q\).</li>
+<li><span class="date">15 Nov</span><span class="num">#12</span><br>Seesaw: the period of the iterated lift is a Bessel period independent of the Hecke characters (Rallis).</li>
+<li><span class="date">6 Oct</span><span class="num">#13</span><br>Bost slope inequality.</li>
+<li><span class="date">15 Nov</span><span class="num">#14</span><br>Precise cost of each lift; a priori one would stop at exponent 2/3, so a further idea ("division") is needed.</li>
+<li><span class="date">15 Nov</span><span class="num">#15</span><br>An integral structure glued across Hecke characters, giving a "gcd", that is, extra averaging.</li>
+<li><span class="date">14 Oct</span><span class="num">#16</span><br>A relative trace formula, reducing by Cauchy-Schwarz to a norm bound for a projected Poincaré series; approximate orthogonality.</li>
+<li><span class="date">15 Nov</span><span class="num">#17</span><br>For Galois cohomology classes that twisting cannot kill, a significant weakening of Vandiver's conjecture.</li>
+<li><span class="date">15 Nov</span><span class="num">#18</span><br>Covolumes, the index of theta series, and congruences between lifts and forms.</li>
+<li><span class="date">19 Oct</span><span class="num">#19</span><br>The precise choice of Iwasawa tower, using Behrend sets.</li>
+<li><span class="date">16 Nov</span><span class="num">#20</span><br>GRH.</li>
+</ul>
+
+<h2 id="remarks">Other remarks in the note</h2>
+<ul>
+<li>A side remark notes that the weakened Vandiver statement is "still pretty strong" and may imply vanishing of several K-groups of \(\mathbb{Z}\).</li>
+<li>Alpöge comments on the timing of the announcement, saying he consulted his organization's leadership and a few trusted mathematicians and takes sole responsibility for not waiting longer.</li>
+<li>He thanks many colleagues by name and praises earlier mathematical work by others in the field of AI assisted mathematics.</li>
+</ul>
+</main>
+<aside class="toc"></aside>
+</div>
+</body>
+</html>

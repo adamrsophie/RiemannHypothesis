@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verify · RH in Lean</title>
+<meta name="description" content="How to build Levent Alpöge's Lean formalization of the Riemann Hypothesis, print its axioms, and replay it with an independent checker.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<link rel="stylesheet" href="assets/style.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<script defer src="assets/site.js"></script>
+</head>
+<body>
+<div class="layout">
+<main class="content">
+<p class="eyebrow">How to</p>
+<h1>Verify it yourself</h1>
+<p class="lede">A formal proof is only as good as the check that was run on it. This page explains how to build the project, how to confirm it uses no extra axioms, and what the current verification status is.</p>
+
+<h2 id="status">Current status</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Check</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>Archive matches Alpöge's release</td><td>✔ The repository's <code>lean/</code> tree has git hash <code>e517b335…</code>, identical to the independent mirror jsmorph/rh.</td></tr>
+<tr><td>Text search for escape hatches</td><td>✔ Zero occurrences in 175,187 files of <code>sorry</code>, <code>admit</code>, <code>axiom</code> declarations, <code>opaque</code>, <code>native_decide</code>, <code>implemented_by</code>, <code>@[extern]</code>, <code>sorryAx</code>, <code>ofReduceBool</code>, <code>unsafe</code>, <code>debug.skipKernelTC</code>.</td></tr>
+<tr><td><code>lake build Main</code></td><td>✘ Not run for this site.</td></tr>
+<tr><td><code>#print axioms</code></td><td>✘ Not run for this site.</td></tr>
+<tr><td>Independent kernel replay</td><td>✘ Not run for this site.</td></tr>
+</tbody></table></div>
+<div class="callout"><p>A text search is a smell test, not a proof. Macros, metaprograms or <code>run_cmd</code> blocks can in principle add declarations that never appear as text. Only the kernel checks below settle the question.</p></div>
+
+<h2 id="requirements">What you need</h2>
+<ul>
+<li>A 64 bit Linux or macOS machine with plenty of RAM. Expect to need tens of gigabytes of memory and disk; the project is roughly two orders of magnitude larger than Mathlib by file count.</li>
+<li><a href="https://github.com/leanprover/elan">elan</a>, the Lean toolchain manager. It reads <code>lean-toolchain</code> and installs Lean <code>v4.33.1</code> automatically.</li>
+<li><code>git</code> and a fast network connection for the Mathlib cache.</li>
+<li>Time. A full build of 175,000 files will take many hours even with many cores.</li>
+</ul>
+
+<h2 id="build">Build</h2>
+<ol class="steps">
+<li><strong>Install elan.</strong>
+<pre><code>curl https://elan.lean-lang.org/elan-init.sh -sSf | sh</code></pre></li>
+<li><strong>Clone.</strong> Shallow clone to save space.
+<pre><code>git clone --depth 1 https://github.com/adamrsophie/RiemannHypothesis.git
+cd RiemannHypothesis/lean</code></pre></li>
+<li><strong>Fetch prebuilt Mathlib.</strong> Lake downloads the pinned Mathlib commit, and the cache tool fetches its compiled files so you do not rebuild Mathlib.
+<pre><code>lake exe cache get</code></pre></li>
+<li><strong>Build the final theorems.</strong> Building the <code>Main</code> target compiles exactly the files that the five theorems depend on.
+<pre><code>lake build Main</code></pre>
+To build every default target instead, run <code>lake build</code>.</li>
+</ol>
+
+<h2 id="axioms">Check the axioms</h2>
+<p>A successful build shows the proofs typecheck. It does not by itself show which axioms they use. Create <code>lean/Check.lean</code>:</p>
+<pre><code>import Main
+
+#print axioms riemannHypothesis
+#print axioms riemannZeta_eq_zero_re
+#print axioms LFunction_ne_zero_of_half_lt_re
+#print axioms LFunction_eq_zero_re
+#print axioms LFunction_eq_zero_re_of_isPrimitive
+
+-- Confirm the statements are the expected ones
+#check @riemannHypothesis
+#print RiemannHypothesis</code></pre>
+<p>and run</p>
+<pre><code>lake env lean Check.lean</code></pre>
+
+<h3 id="expected">What a clean result looks like</h3>
+<pre><code>'riemannHypothesis' depends on axioms: [propext, Classical.choice, Quot.sound]</code></pre>
+<p>These three are Lean's standard axioms, used throughout Mathlib: propositional extensionality, the axiom of choice, and quotient soundness. Any of the following in the list would mean the proof is <strong>not</strong> unconditional:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Appears in output</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>sorryAx</code></td><td>Some step was left unproved.</td></tr>
+<tr><td>Any other named axiom</td><td>An assumption was added, perhaps hidden in a metaprogram.</td></tr>
+<tr><td><code>Lean.ofReduceBool</code> or <code>Lean.trustCompiler</code></td><td>Some step trusts compiled code (<code>native_decide</code> or similar) instead of the kernel.</td></tr>
+</tbody></table></div>
+
+<h2 id="replay">Replay in an independent kernel</h2>
+<p>For the strongest check, export the compiled environment and recheck it with a separate implementation, so that a bug in Lean's own elaborator or kernel cannot hide a gap.</p>
+<ul>
+<li><a href="https://github.com/leanprover/lean4checker">lean4checker</a> replays the <code>.olean</code> files through the Lean kernel from scratch, catching environment manipulation by metaprograms.</li>
+<li><a href="https://github.com/leanprover/lean4export">lean4export</a> writes the environment in a portable text format, which independent checkers such as <a href="https://github.com/ammkrn/nanoda_lib">nanoda</a> (Rust) can verify.</li>
+</ul>
+
+<h2 id="statements">Check the statements, not just the proofs</h2>
+<p>A perfectly checked proof of the wrong statement is worthless. The <a href="statements.html">Statements</a> page explains the four definitions. In particular, <code>riemannHypothesis</code> has type <code>RiemannHypothesis</code>, Mathlib's own definition, so the statement cannot have been weakened by the project. Confirm with <code>#print RiemannHypothesis</code> that it resolves to Mathlib's declaration and prints the expected body.</p>
+
+<h2 id="report">Reporting results</h2>
+<p>If you complete a build and an axiom check, the result is valuable to everyone. Please open an issue on the <a href="https://github.com/adamrsophie/RiemannHypothesis/issues">repository</a> with your machine, build time, peak memory, and the full <code>#print axioms</code> output, and it will be recorded on this page.</p>
+</main>
+<aside class="toc"></aside>
+</div>
+</body>
+</html>

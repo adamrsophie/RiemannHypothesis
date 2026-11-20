@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Statements · RH in Lean</title>
+<meta name="description" content="The exact Lean 4 statements proved in Levent Alpöge's formalization, with their mathematical meaning and the Mathlib definitions they depend on.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<link rel="stylesheet" href="assets/style.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<script defer src="assets/site.js"></script>
+</head>
+<body>
+<div class="layout">
+<main class="content">
+<p class="eyebrow">Reference</p>
+<h1>The final statements</h1>
+<p class="lede">The whole project exists to make five theorems in <code>lean/src/Main.lean</code> typecheck. Their statements use only Mathlib definitions, so you can read and trust them without opening any of the other 175,185 files.</p>
+
+<h2 id="files">The two root files</h2>
+<p>The <code>Main</code> library has exactly two roots. <code>Statements.lean</code> imports only Mathlib and defines four propositions. <code>Main.lean</code> imports those definitions together with the proof, and states the theorems.</p>
+<h3 id="statements-lean">Statements.lean</h3>
+<pre><code>import Mathlib
+
+def RiemannZetaZerosOnLine : Prop :=
+  ∀ s : ℂ, riemannZeta s = 0 → (¬∃ n : ℕ, s = -2 * ((n : ℂ) + 1)) → s ≠ 1 → s.re = 1 / 2
+
+def DirichletLNonvanishingRightOfHalf : Prop :=
+  ∀ (N : ℕ) [NeZero N] (χ : DirichletCharacter ℂ N) (s : ℂ),
+    1 / 2 &lt; s.re → (χ ≠ 1 ∨ s ≠ 1) → DirichletCharacter.LFunction χ s ≠ 0
+
+def DirichletLZerosOnLine : Prop :=
+  ∀ (N : ℕ) [NeZero N] (χ : DirichletCharacter ℂ N) (s : ℂ),
+    0 &lt; s.re → s.re &lt; 1 → DirichletCharacter.LFunction χ s = 0 → s.re = 1 / 2
+
+def PrimitiveDirichletLZerosOnLine : Prop :=
+  ∀ (N : ℕ) [NeZero N] (χ : DirichletCharacter ℂ N), χ.IsPrimitive →
+    ∀ s : ℂ, 0 &lt; s.re → s.re &lt; 1 → DirichletCharacter.LFunction χ s = 0 → s.re = 1 / 2</code></pre>
+<h3 id="main-lean">Main.lean</h3>
+<pre><code>import Statements
+import Supplements.Kernels.MainTheoremsAll
+
+theorem riemannHypothesis : RiemannHypothesis := rhOfAll
+
+theorem riemannZeta_eq_zero_re : RiemannZetaZerosOnLine := rhOfAll
+
+theorem LFunction_ne_zero_of_half_lt_re : DirichletLNonvanishingRightOfHalf := allChi
+
+theorem LFunction_eq_zero_re : DirichletLZerosOnLine := claimAll.2.1
+
+theorem LFunction_eq_zero_re_of_isPrimitive : PrimitiveDirichletLZerosOnLine := critAll</code></pre>
+
+<h2 id="each">Each theorem explained</h2>
+
+<h3 id="t-rh"><code>riemannHypothesis</code></h3>
+<p>Type: Mathlib's <code>RiemannHypothesis</code>, defined in <code>Mathlib/NumberTheory/LSeries/RiemannZeta.lean</code> as</p>
+<pre><code>def RiemannHypothesis : Prop :=
+  ∀ (s : ℂ) (_ : riemannZeta s = 0) (_ : ¬∃ n : ℕ, s = -2 * (n + 1)) (_ : s ≠ 1), s.re = 1 / 2</code></pre>
+<p>In words: if \(\zeta(s) = 0\), \(s\) is not a trivial zero \(-2, -4, \dots\), and \(s \ne 1\), then \(\operatorname{Re} s = \tfrac12\). The condition \(s \ne 1\) is only there because Mathlib's total function has some value at the pole. Using Mathlib's own definition matters: the statement was written by the Mathlib community long before this project, so the project could not have weakened it.</p>
+
+<h3 id="t-zeta"><code>riemannZeta_eq_zero_re</code></h3>
+<p>The same statement written out by hand in <code>Statements.lean</code> as <code>RiemannZetaZerosOnLine</code>. The only difference is the explicit cast <code>((n : ℂ) + 1)</code>. It is proved by the same term <code>rhOfAll</code>, which shows the two definitions agree definitionally, and gives a reader a copy of the statement they can see without opening Mathlib.</p>
+
+<h3 id="t-half"><code>LFunction_ne_zero_of_half_lt_re</code></h3>
+<div class="math-display">$$\forall N \ge 1,\ \forall \chi \bmod N,\ \forall s,\quad \operatorname{Re} s &gt; \tfrac12 \ \wedge\ (\chi \ne 1 \vee s \ne 1) \ \Longrightarrow\ L(s,\chi) \ne 0.$$</div>
+<p>This is the heart of the project. Every other theorem is derived from it in a few lines (see <a href="proof.html">Proof structure</a>). Notes on the formulation:</p>
+<ul>
+<li><code>[NeZero N]</code> excludes the meaningless modulus 0.</li>
+<li><code>χ ≠ 1 ∨ s ≠ 1</code> excludes only the pole of the trivial character's L-function at \(s=1\), where Lean's value is junk. Note that for \(N &gt; 1\) the trivial character mod \(N\) is imprimitive, and its L-function is \(\zeta(s)\prod_{p\mid N}(1-p^{-s})\).</li>
+<li>It covers <em>all</em> characters, including imprimitive ones, and all \(s\) to the right of \(\tfrac12\), including \(\operatorname{Re} s \ge 1\) where nonvanishing was already classical.</li>
+</ul>
+
+<h3 id="t-strip"><code>LFunction_eq_zero_re</code></h3>
+<div class="math-display">$$\forall N,\ \forall \chi \bmod N,\ \forall s,\quad 0 &lt; \operatorname{Re} s &lt; 1 \ \wedge\ L(s,\chi) = 0 \ \Longrightarrow\ \operatorname{Re} s = \tfrac12.$$</div>
+<p>GRH for every Dirichlet L-function. The strip condition \(0 &lt; \operatorname{Re} s\) is necessary, not a weakening: imprimitive L-functions really do vanish on \(\operatorname{Re} s = 0\) because of their extra Euler factors (see <a href="background.html#primitive">Background</a>).</p>
+
+<h3 id="t-prim"><code>LFunction_eq_zero_re_of_isPrimitive</code></h3>
+<p>The same for primitive characters only. It is logically weaker than <code>LFunction_eq_zero_re</code>, but it is proved by a separate, very short route (<code>critAll</code>), which makes it the most transparent of the strip statements.</p>
+
+<h2 id="trust">What you have to trust</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Component</th><th>Why it is trusted</th></tr></thead>
+<tbody>
+<tr><td>The Lean 4 kernel</td><td>Small, heavily scrutinized type checker. Independent reimplementations exist and can replay the proof.</td></tr>
+<tr><td>Mathlib definitions used in the statements</td><td><code>riemannZeta</code>, <code>DirichletCharacter</code>, <code>DirichletCharacter.LFunction</code>, <code>IsPrimitive</code>, <code>RiemannHypothesis</code>, and the basic number systems. Written and reviewed by the Mathlib community, independently of this project.</td></tr>
+<tr><td><code>Statements.lean</code></td><td>Four definitions, shown in full above.</td></tr>
+<tr><td>The axioms used</td><td>Must be only <code>propext</code>, <code>Classical.choice</code> and <code>Quot.sound</code>. This is checked with <code>#print axioms</code>; see <a href="verify.html">Verify</a>.</td></tr>
+</tbody></table></div>
+<p>You do <strong>not</strong> have to trust or even read the remaining 175,185 files. If the kernel accepts them and no extra axioms appear, their content is irrelevant to the truth of the statements. This is the point of releasing a formal proof instead of a 250,000 page manuscript.</p>
+
+<h2 id="pitfalls">Things a careful reader should check</h2>
+<ul>
+<li>That the build uses the Mathlib commit pinned in <code>lake-manifest.json</code>, and that this commit's <code>RiemannHypothesis</code> and <code>LFunction</code> are the standard definitions (they are ordinary Mathlib, not a fork: the dependency URL is <code>leanprover-community/mathlib4</code>).</li>
+<li>That no file in the project redefines or shadows these names. A redefinition would have to live in a different namespace, and <code>#check @riemannHypothesis</code> after <code>import Main</code> shows the fully elaborated type.</li>
+<li>That <code>#print axioms</code> is clean for all five theorems.</li>
+</ul>
+</main>
+<aside class="toc"></aside>
+</div>
+</body>
+</html>

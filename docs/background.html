@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Background · RH in Lean</title>
+<meta name="description" content="The mathematics behind the formalization: the Riemann zeta function, Dirichlet L-functions, functional equations, and the Riemann Hypothesis and its generalization.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<link rel="stylesheet" href="assets/style.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<script defer src="assets/site.js"></script>
+</head>
+<body>
+<div class="layout">
+<main class="content">
+<p class="eyebrow">Guide</p>
+<h1>Mathematical background</h1>
+<p class="lede">A short tour of the objects that appear in the final Lean statements, for readers who know some analysis but are not number theorists. Everything on this page is standard mathematics, independent of Alpöge's work.</p>
+
+<h2 id="zeta">The Riemann zeta function</h2>
+<p>For complex \(s\) with \(\operatorname{Re} s &gt; 1\) the Riemann zeta function is the absolutely convergent series</p>
+<div class="math-display">$$\zeta(s) = \sum_{n=1}^{\infty} \frac{1}{n^{s}} = \prod_{p \text{ prime}} \frac{1}{1 - p^{-s}}.$$</div>
+<p>The product over primes (Euler's product) is why \(\zeta\) knows about prime numbers. Riemann showed in 1859 that \(\zeta\) extends to a meromorphic function on the whole complex plane, with a single simple pole at \(s = 1\).</p>
+<p>In Mathlib this function is <code>riemannZeta : ℂ → ℂ</code>. Because Lean functions must be total, Mathlib assigns a junk value at the pole \(s = 1\); this is why every Lean statement about zeros adds the hypothesis <code>s ≠ 1</code>.</p>
+
+<h3 id="zeros">Trivial and nontrivial zeros</h3>
+<p>\(\zeta(s)\) vanishes at \(s = -2, -4, -6, \dots\). These are the <em>trivial zeros</em>, forced by poles of the Gamma function in the functional equation. Every other zero lies in the <em>critical strip</em> \(0 &lt; \operatorname{Re} s &lt; 1\); these are the <em>nontrivial zeros</em>. The first few are at about \(\tfrac12 \pm 14.1347\,i\), \(\tfrac12 \pm 21.0220\,i\), \(\tfrac12 \pm 25.0109\,i\).</p>
+
+<h3 id="fe">The functional equation</h3>
+<p>The completed zeta function \(\xi(s) = \pi^{-s/2}\,\Gamma(s/2)\,\zeta(s)\) satisfies \(\xi(s) = \xi(1-s)\). Equivalently, in the asymmetric form used by Mathlib's <code>riemannZeta_one_sub</code>,</p>
+<div class="math-display">$$\zeta(1-s) = 2\,(2\pi)^{-s}\,\Gamma(s)\,\cos\!\Big(\frac{\pi s}{2}\Big)\,\zeta(s).$$</div>
+<p>This symmetry about the line \(\operatorname{Re} s = \tfrac12\) is used directly in the formalization (see <a href="proof.html#rh-of-right">Proof structure</a>): it turns a zero to the left of the line into a zero to the right of it.</p>
+
+<h2 id="rh">The Riemann Hypothesis</h2>
+<div class="callout note"><p><strong>Riemann Hypothesis.</strong> Every nontrivial zero of \(\zeta(s)\) has real part exactly \(\tfrac12\).</p></div>
+<p>Because of the functional equation, it is enough to show that \(\zeta(s) \ne 0\) for \(\operatorname{Re} s &gt; \tfrac12\). The formalization reduces to exactly this.</p>
+
+<h3 id="why">Why it matters</h3>
+<p>Let \(\pi(x)\) be the number of primes up to \(x\). The Prime Number Theorem says \(\pi(x) \sim \operatorname{li}(x) = \int_2^x \frac{dt}{\log t}\). The Riemann Hypothesis is equivalent to the error bound</p>
+<div class="math-display">$$\pi(x) = \operatorname{li}(x) + O\big(\sqrt{x}\,\log x\big),$$</div>
+<p>which is the "optimal control on the count of prime numbers" mentioned in the first line of Alpöge's note. Equivalently, the Chebyshev function \(\psi(x) = \sum_{n \le x} \Lambda(n)\), a sum of the von Mangoldt function \(\Lambda\), satisfies \(\psi(x) = x + O(\sqrt{x}\,\log^2 x)\). The note speaks of exactly such a "von Mangoldt sum of length \(X\)".</p>
+
+<h2 id="dirichlet">Dirichlet characters and L-functions</h2>
+<p>A Dirichlet character modulo \(N\) is a function \(\chi : \mathbb{Z} \to \mathbb{C}\) that is periodic mod \(N\), completely multiplicative, and vanishes exactly on integers not coprime to \(N\). It comes from a group homomorphism \((\mathbb{Z}/N\mathbb{Z})^\times \to \mathbb{C}^\times\). Its L-function is</p>
+<div class="math-display">$$L(s, \chi) = \sum_{n=1}^{\infty} \frac{\chi(n)}{n^{s}} = \prod_{p} \frac{1}{1 - \chi(p)\,p^{-s}}, \qquad \operatorname{Re} s &gt; 1.$$</div>
+<p>Dirichlet introduced these in 1837 to prove that every progression \(a, a+N, a+2N, \dots\) with \(\gcd(a,N)=1\) contains infinitely many primes. In Mathlib the character is <code>DirichletCharacter ℂ N</code> and its analytically continued L-function is <code>DirichletCharacter.LFunction χ s</code>. The trivial character modulo 1 has \(L(s,\chi) = \zeta(s)\) (Mathlib: <code>LFunction_modOne_eq</code>).</p>
+
+<h3 id="primitive">Primitive characters</h3>
+<p>A character mod \(N\) may really be "defined" modulo a smaller divisor \(f \mid N\), its <em>conductor</em>. It is <em>primitive</em> when \(f = N\). If \(\chi\) is induced from the primitive \(\chi^*\) then</p>
+<div class="math-display">$$L(s,\chi) = L(s,\chi^*) \prod_{p \mid N} \big(1 - \chi^*(p)\,p^{-s}\big),$$</div>
+<p>and the extra Euler factors vanish only on the line \(\operatorname{Re} s = 0\). So an imprimitive L-function has the same zeros as its primitive one inside the critical strip, plus extra zeros on \(\operatorname{Re} s = 0\). This is why the Lean statement about all characters restricts to \(0 &lt; \operatorname{Re} s &lt; 1\).</p>
+
+<h3 id="dirichlet-fe">The functional equation for L-functions</h3>
+<p>For primitive \(\chi\) mod \(N\), let \(\mathfrak a = 0\) if \(\chi(-1) = 1\) (even) and \(\mathfrak a = 1\) if \(\chi(-1) = -1\) (odd). The completed L-function</p>
+<div class="math-display">$$\Lambda(s,\chi) = \Gamma_{\mathbb R}(s + \mathfrak a)\, L(s,\chi), \qquad \Gamma_{\mathbb R}(s) = \pi^{-s/2}\,\Gamma(s/2),$$</div>
+<p>is entire (for \(\chi \ne 1\)) and satisfies \(\Lambda(1-s, \chi) = \varepsilon(\chi)\, \Lambda(s, \overline{\chi})\) with a root number \(|\varepsilon(\chi)| = 1\) (up to normalization by a power of \(N\)). In Mathlib: <code>gammaFactor</code>, <code>completedLFunction</code> and <code>IsPrimitive.completedLFunction_one_sub</code>. Since \(\overline{\chi} = \chi^{-1}\), a zero of \(L(s,\chi)\) at \(s\) gives a zero of \(L(1-s, \chi^{-1})\).</p>
+
+<h2 id="grh">The Generalized Riemann Hypothesis</h2>
+<div class="callout note"><p><strong>GRH for Dirichlet L-functions.</strong> For every Dirichlet character \(\chi\), every zero of \(L(s,\chi)\) with \(0 &lt; \operatorname{Re} s &lt; 1\) has real part \(\tfrac12\).</p></div>
+<p>GRH implies, among many other things, a sharp form of the prime number theorem in arithmetic progressions, a polynomial bound \(O(\log^2 N)\) on the least quadratic nonresidue, the deterministic correctness of the Miller primality test, and strong bounds in the analytic theory of class numbers. Many published theorems are conditional on it.</p>
+
+<h3 id="erh">The Extended Riemann Hypothesis</h3>
+<p>The Extended Riemann Hypothesis makes the same claim for Dedekind zeta functions \(\zeta_K(s)\) of number fields \(K\) (and more generally Hecke L-functions). Alpöge's note says he expects the method to reach it "with more time". The released Lean code does <strong>not</strong> state or prove it.</p>
+
+<h2 id="function-fields">The function field analogue</h2>
+<p>For a smooth projective curve \(C\) over a finite field \(\mathbb F_q\) there is a zeta function counting points of \(C\) over the extensions \(\mathbb F_{q^n}\). Its "Riemann Hypothesis" was proved by Weil (1940s) and, for all varieties, by Deligne (1974). In 1969 Stepanov found an elementary proof for curves: build an auxiliary polynomial that vanishes to high <em>multiplicity</em> at every rational point, then compare its degree with the number of zeros counted with multiplicity. Bombieri and Schmidt later simplified and extended this. Alpöge's note describes his argument as a descendant of Stepanov's; see <a href="note.html">The note</a>.</p>
+<p>The difficulty the note points at is that over \(\mathbb{Z}\) there is no obvious notion of a function vanishing to high order at an integer, "something like differentiating whole numbers". The proposed substitute is a chain of theta lifts between automorphic forms on unitary groups.</p>
+
+<h2 id="lean">Lean and Mathlib in one paragraph</h2>
+<p><a href="https://lean-lang.org/">Lean 4</a> is a proof assistant based on dependent type theory. A theorem is a term whose type is the statement; Lean's small trusted <em>kernel</em> checks every proof term. <a href="https://github.com/leanprover-community/mathlib4">Mathlib</a> is its community library, which already contains the definitions of the zeta function, Dirichlet L-functions, their analytic continuation, and their functional equations, together with the proposition <code>RiemannHypothesis</code>. That is what makes this formalization checkable against an external, independently written statement.</p>
+</main>
+<aside class="toc"></aside>
+</div>
+</body>
+</html>

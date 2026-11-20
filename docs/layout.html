@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project layout · RH in Lean</title>
+<meta name="description" content="How the 175,187 Lean files of the Riemann Hypothesis formalization are organized into libraries and directories, and how the build is configured.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<link rel="stylesheet" href="assets/style.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<script defer src="assets/site.js"></script>
+</head>
+<body>
+<div class="layout">
+<main class="content">
+<p class="eyebrow">Reference</p>
+<h1>Project layout</h1>
+<p class="lede">The project is a single Lake package named <code>tree</code> with eleven library targets and 175,187 Lean files. This page maps where the files are. Descriptions come from directory names only; the files themselves have not been read.</p>
+
+<h2 id="tree">Top level</h2>
+<pre><code>lean/
+├── lean-toolchain          leanprover/lean4:v4.33.1
+├── lakefile.toml           package "tree", library targets, Lean options
+├── lake-manifest.json      pinned Mathlib and its dependencies
+└── src/
+    ├── Statements.lean     the four propositions (imports only Mathlib)
+    ├── Main.lean           the five final theorems
+    ├── Supplements/        top level assembly (3 files)
+    ├── Development/        141,928 files
+    ├── Formalism/          18,254 files
+    ├── GroundTheory/       8,507 files
+    ├── ReciprocityTheory/  3,845 files
+    ├── CompanionTheory/    2,027 files
+    ├── PositivityTheory/   449 files
+    ├── Lemmata/            167 files
+    └── BuildAid/           5 files</code></pre>
+
+<h2 id="libraries">Libraries by size</h2>
+<div class="bars">
+  <div class="bar"><span>Development</span><div class="track"><div class="fill" style="width:100%"></div></div><span class="n">141,928</span></div>
+  <div class="bar"><span>Formalism</span><div class="track"><div class="fill" style="width:12.86%"></div></div><span class="n">18,254</span></div>
+  <div class="bar"><span>GroundTheory</span><div class="track"><div class="fill" style="width:5.99%"></div></div><span class="n">8,507</span></div>
+  <div class="bar"><span>ReciprocityTheory</span><div class="track"><div class="fill" style="width:2.71%"></div></div><span class="n">3,845</span></div>
+  <div class="bar"><span>CompanionTheory</span><div class="track"><div class="fill" style="width:1.43%"></div></div><span class="n">2,027</span></div>
+  <div class="bar"><span>PositivityTheory</span><div class="track"><div class="fill" style="width:.32%"></div></div><span class="n">449</span></div>
+  <div class="bar"><span>Lemmata</span><div class="track"><div class="fill" style="width:.12%"></div></div><span class="n">167</span></div>
+  <div class="bar"><span>BuildAid · Supplements · Main</span><div class="track"><div class="fill" style="width:.01%"></div></div><span class="n">10</span></div>
+</div>
+<p>About 81% of all files sit in <code>Development</code>, and 57% of all files sit in one directory, <code>Development/AbelianVarietyTheory</code>.</p>
+
+<h2 id="development">Development (141,928 files)</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Directory</th><th class="num">Files</th><th>Largest subdirectories</th></tr></thead>
+<tbody>
+<tr><td><code>AbelianVarietyTheory</code></td><td class="num">99,187</td><td>Proofs (95,418), Definitions (2,198), BlockTheory (753), PublishedTheorems (493), Counterexamples (192), Statements (121), CrystallinePeriods (12)</td></tr>
+<tr><td><code>AutomorphicArithmetic</code></td><td class="num">18,431</td><td>AutomorphicVarieties (7,959), Foundations (4,413), ThetaCorrespondence (3,201), IntegralCasts (907), CommutativeAlgebra (432), DivisorFrames (383), CyclotomicBounds (246), WhittakerHecke (164), CharacterBoxes</td></tr>
+<tr><td><code>AutomorphicSpectrum</code></td><td class="num">15,147</td><td>Proofs (14,864), Definitions (197), Statements (57), PublishedTheorems (23)</td></tr>
+<tr><td><code>WeilBound</code></td><td class="num">7,051</td><td>CoreStatements (3,746), RepresentationTheoryGL (2,486), ThetaLifts (788), HeckeVectors (20)</td></tr>
+<tr><td><code>EtaleCohomology</code></td><td class="num">1,398</td><td></td></tr>
+<tr><td><code>ResolutionOfSingularities</code></td><td class="num">499</td><td></td></tr>
+<tr><td><code>DiscreteGroups</code></td><td class="num">215</td><td></td></tr>
+</tbody></table></div>
+<p><code>AutomorphicArithmetic/CharacterBoxes</code> holds the final assembly: <code>EveryCharacter.lean</code>, <code>MainConclusion.lean</code>, <code>ClaimStrip.lean</code> and <code>HalfPlane.lean</code>, discussed on the <a href="proof.html">Proof structure</a> page. <code>ThetaCorrespondence</code> and <code>WeilBound/ThetaLifts</code> match the note's emphasis on theta lifts.</p>
+
+<h2 id="formalism">Formalism (18,254 files)</h2>
+<p>116 topic folders. The largest:</p>
+<div class="bars">
+  <div class="bar"><span>LocalToGlobal</span><div class="track"><div class="fill" style="width:100%"></div></div><span class="n">5,501</span></div>
+  <div class="bar"><span>PeriodIntegrals</span><div class="track"><div class="fill" style="width:79%"></div></div><span class="n">4,350</span></div>
+  <div class="bar"><span>SharpRestriction</span><div class="track"><div class="fill" style="width:56%"></div></div><span class="n">3,093</span></div>
+  <div class="bar"><span>HermitianCurvature</span><div class="track"><div class="fill" style="width:35%"></div></div><span class="n">1,922</span></div>
+  <div class="bar"><span>GL3MeanSquares</span><div class="track"><div class="fill" style="width:8%"></div></div><span class="n">440</span></div>
+  <div class="bar"><span>ThetaLogCoordinates</span><div class="track"><div class="fill" style="width:5.3%"></div></div><span class="n">292</span></div>
+  <div class="bar"><span>WachLatticeTwists</span><div class="track"><div class="fill" style="width:4.8%"></div></div><span class="n">262</span></div>
+  <div class="bar"><span>LocalRingCardinality</span><div class="track"><div class="fill" style="width:3.1%"></div></div><span class="n">173</span></div>
+</div>
+<p>Smaller folders have names such as <code>GammaFactorNonvanishing</code> (home of <code>critLine</code> and <code>rh_of_right</code>), <code>BehrendSets</code>, <code>ArtinHasse</code>, <code>FormalGroupWitt</code>, <code>FormalGroupLog</code>, <code>GaloisCohomology</code>, <code>CyclotomicNorms</code>, <code>DirichletDensity</code> and <code>EllipticTorsion</code>. <code>SharpRestriction</code> contains the definitions of <code>PChar</code> and <code>ZeroFreeAll</code>.</p>
+
+<h2 id="others">The other libraries</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Library</th><th class="num">Files</th><th>Contents by directory name</th></tr></thead>
+<tbody>
+<tr><td><code>GroundTheory</code> and <code>GroundTheoryFields</code></td><td class="num">8,507</td><td>HeightsAndTheta (6,410), AutomorphicForms (542), ProfiniteCohomology (450), GlobalFields (384), PAdicHodge (226), ArithmeticGeometry (218), LocalFields (159), TateCohomology (56), Brauer (20), PowerSubgroups (20), FunctionField (12), IdeleRoots (10). <code>LocalFields</code> and <code>GlobalFields</code> form the separate target <code>GroundTheoryFields</code>, built with a higher instance search budget.</td></tr>
+<tr><td><code>ReciprocityTheory</code></td><td class="num">3,845</td><td>ReductiveGroups (2,799), L2DbarEstimates (227), AnalyticForms (192), DualLattices (183), SemistableReduction (119), ClassFieldTheory (91), GroupCohomology (56), Chebotarev (47), GeometryOfNumbers (39), and 15 smaller folders</td></tr>
+<tr><td><code>CompanionTheory</code></td><td class="num">2,027</td><td>SpectralGeometry (1,254), AutomorphicTheory (457), RealGroups (155), HarishChandraModules (130), ThickeningEstimates (22), EightfoldTheory (9)</td></tr>
+<tr><td><code>PositivityTheory</code></td><td class="num">449</td><td>AutomorphicForms (445), including <code>PublishedInputs/CuspidalContinuity</code>; PublishedTheorems (3); Representations (1)</td></tr>
+<tr><td><code>Lemmata</code></td><td class="num">167</td><td>Small standalone lemmas, one per folder</td></tr>
+<tr><td><code>BuildAid</code></td><td class="num">5</td><td>Tiny files <code>D1</code> to <code>D5</code>. For example <code>D1.lean</code> adds <code>CompanionTheory</code> to the deny list of Lean's library suggestion extension, so automation does not suggest lemmas from it.</td></tr>
+<tr><td><code>Supplements</code></td><td class="num">3</td><td><code>Kernels/MainTheorems.lean</code>, <code>MainTheoremsCritical.lean</code>, <code>MainTheoremsAll.lean</code></td></tr>
+<tr><td><code>Main</code></td><td class="num">2</td><td>Roots <code>Statements</code> and <code>Main</code></td></tr>
+</tbody></table></div>
+<p>Folder names containing <code>PublishedTheorems</code> or <code>PublishedInputs</code> suggest formal proofs of results from the literature. Note that, as far as the text search shows, these are proved in Lean rather than assumed.</p>
+
+<h2 id="build">Build configuration</h2>
+<pre><code>name = "tree"
+srcDir = "src"
+defaultTargets = ["BuildAid", "CompanionTheory", "Development", "Formalism", "GroundTheory",
+  "GroundTheoryFields", "Lemmata", "PositivityTheory", "ReciprocityTheory", "Supplements", "Main"]
+moreLeanArgs = ["--tstack=400000"]
+
+[leanOptions]
+autoImplicit = false
+relaxedAutoImplicit = false
+maxSynthPendingDepth = 3
+pp.unicode.fun = true
+maxHeartbeats = 4000000
+
+[[require]]
+name = "mathlib"
+git = "https://github.com/leanprover-community/mathlib4"
+rev = "0df444a360eaa60ab8c11dca51a86af692955474"</code></pre>
+<div class="table-wrap"><table><tbody>
+<tr><th>Setting</th><th>Meaning</th></tr>
+<tr><td><code>autoImplicit = false</code></td><td>Unknown identifiers are errors, not silently bound variables. A standard safety setting.</td></tr>
+<tr><td><code>maxHeartbeats = 4000000</code></td><td>20 times Lean's default elaboration budget per declaration. Affects how long tactics may run, not soundness.</td></tr>
+<tr><td><code>maxSynthPendingDepth = 3</code></td><td>Allows deeper nested type class problems during elaboration.</td></tr>
+<tr><td><code>--tstack=400000</code></td><td>Larger thread stack for the Lean process, for deep terms.</td></tr>
+<tr><td>Mathlib pin</td><td>An exact commit of the official <code>leanprover-community/mathlib4</code>, not a fork.</td></tr>
+</tbody></table></div>
+<p>None of these options affect what the kernel accepts. They only change resource limits during elaboration.</p>
+
+<h2 id="counts">Counts</h2>
+<div class="stats">
+  <div class="stat"><div class="v">175,187</div><div class="k">.lean files</div></div>
+  <div class="stat"><div class="v">≈ 813,000</div><div class="k"><code>theorem</code> or <code>lemma</code> lines</div></div>
+  <div class="stat"><div class="v">≈ 233,000</div><div class="k"><code>def</code>, <code>abbrev</code>, <code>structure</code>, <code>class</code>, <code>inductive</code> lines</div></div>
+  <div class="stat"><div class="v">1.3 GB</div><div class="k">on disk (983 MB of source text)</div></div>
+</div>
+<p>Declaration counts are from a line based text search and are approximate.</p>
+</main>
+<aside class="toc"></aside>
+</div>
+</body>
+</html>

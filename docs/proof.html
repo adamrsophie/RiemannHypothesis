@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proof structure · RH in Lean</title>
+<meta name="description" content="How the Lean proof of the Riemann Hypothesis is assembled: the reduction to a zero free half plane for Dirichlet L-functions, explained step by step.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<link rel="stylesheet" href="assets/style.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<script defer src="assets/site.js"></script>
+</head>
+<body>
+<div class="layout">
+<main class="content">
+<p class="eyebrow">Guide</p>
+<h1>Proof structure</h1>
+<p class="lede">The top of the proof is short and readable. Every final theorem is derived, in a few dozen lines that use only Mathlib, from one statement: no Dirichlet L-function vanishes to the right of the critical line. This page walks through those reductions and shows where the deep part begins.</p>
+
+<div class="callout"><p><strong>Scope.</strong> Everything on this page was read directly from the Lean source. Below the point marked <a href="#deep">"where the depth is"</a>, the roughly 175,000 remaining files have not been read for this guide, and nothing here explains their mathematics.</p></div>
+
+<h2 id="map">The map</h2>
+<pre><code>Main.riemannHypothesis                          Main.lean
+└─ rhOfAll                                      Supplements/Kernels/MainTheorems.lean
+   └─ Formalism.VW.rh_of_every allChi           Formalism/GammaFactorNonvanishing/CritLine.lean
+      ├─ Formalism.VW.rh_of_right               Formalism/GammaFactorNonvanishing/RhOfRight.lean
+      └─ allChi : UpperTheory.EveryCharacter
+         = UpperTheory.FinalTheorems.everyCharacter
+                                                Development/AutomorphicArithmetic/CharacterBoxes/MainConclusion.lean
+
+Main.LFunction_eq_zero_re_of_isPrimitive
+└─ critAll = Formalism.VW.critLine allChi       Formalism/GammaFactorNonvanishing/CritLine.lean
+
+Main.LFunction_eq_zero_re
+└─ claimAll.2.1 = Claim.strip allChi            Development/AutomorphicArithmetic/CharacterBoxes/ClaimStrip.lean</code></pre>
+<p><code>Supplements/Kernels/MainTheorems.lean</code> is the assembly point:</p>
+<pre><code>theorem allChi : UpperTheory.EveryCharacter := UpperTheory.FinalTheorems.everyCharacter
+
+theorem rhOfAll : RiemannHypothesis := Formalism.VW.rh_of_every allChi
+
+theorem critAll (N : ℕ) [NeZero N] (χ : DirichletCharacter ℂ N) (hχ : χ.IsPrimitive) (s : ℂ)
+    (h0 : 0 &lt; s.re) (h1 : s.re &lt; 1) (hz : LFunction χ s = 0) : s.re = 1 / 2 :=
+  Formalism.VW.critLine allChi N χ hχ s h0 h1 hz
+
+theorem claimAll : Claim.HalfPlane ∧ Claim.Strip ∧ Claim.Zeta :=
+  ⟨allChi, Claim.strip allChi, Claim.zeta allChi⟩</code></pre>
+
+<h2 id="key">The key statement</h2>
+<pre><code>def UpperTheory.EveryCharacter : Prop :=
+  ∀ (N : ℕ) [NeZero N] (χ : DirichletCharacter ℂ N) (s : ℂ),
+    1 / 2 &lt; s.re → (χ ≠ 1 ∨ s ≠ 1) → DirichletCharacter.LFunction χ s ≠ 0</code></pre>
+<p>This is word for word <code>DirichletLNonvanishingRightOfHalf</code> from <code>Statements.lean</code>. Each of the following reductions takes <code>EveryCharacter</code> as a hypothesis <code>h</code>.</p>
+
+<h2 id="rh-of-right">Step 1: zeta, from right to left</h2>
+<p><code>Formalism.VW.rh_of_right</code> imports only Mathlib. It proves</p>
+<div class="math-display">$$\Big(\forall s,\ \operatorname{Re} s &gt; \tfrac12,\ s \ne 1 \Rightarrow \zeta(s) \ne 0\Big) \ \Longrightarrow\ \text{RH}.$$</div>
+<p>Take a zero \(s\) that is not trivial and not 1. Split on \(\operatorname{Re} s\) versus \(\tfrac12\):</p>
+<ul>
+<li>\(\operatorname{Re} s = \tfrac12\): done.</li>
+<li>\(\operatorname{Re} s &gt; \tfrac12\): contradicts the hypothesis.</li>
+<li>\(\operatorname{Re} s &lt; \tfrac12\): use the functional equation <code>riemannZeta_one_sub</code> at the point \(1-s\):
+<div class="math-display">$$\zeta(s) = 2\,(2\pi)^{-(1-s)}\,\Gamma(1-s)\,\cos\!\Big(\frac{\pi(1-s)}{2}\Big)\,\zeta(1-s).$$</div>
+The left side is 0. The proof shows each factor on the right is nonzero: \(2(2\pi)^{s-1} \ne 0\); \(\Gamma(1-s) \ne 0\) because \(\operatorname{Re}(1-s) &gt; 0\); and \(\cos(\pi(1-s)/2) = 0\) would force \(s = -2k\) for an integer \(k\), and every such \(s\) is excluded: \(k&lt;0\) gives \(\operatorname{Re} s \ge 2\), contradicting \(\operatorname{Re} s &lt; \tfrac12\); \(k=0\) gives \(s=0\), but \(\zeta(0) = -\tfrac12 \ne 0\); \(k &gt; 0\) gives a trivial zero. Finally \(\zeta(1-s) \ne 0\) by the hypothesis, since \(\operatorname{Re}(1-s) &gt; \tfrac12\). Contradiction.</li>
+</ul>
+<details><summary>Show the Lean source of the key case</summary>
+<pre><code>have key := riemannZeta_one_sub hnat h1
+rw [sub_sub_cancel, hs] at key
+have hz' := hz (1 - s) ht h1
+have h2pi : (2 : ℂ) * (2 * (Real.pi : ℂ)) ^ (-(1 - s)) ≠ 0 :=
+  mul_ne_zero two_ne_zero (Complex.cpow_ne_zero_iff.2 (Or.inl (mul_ne_zero two_ne_zero hpi)))
+have hG : Complex.Gamma (1 - s) ≠ 0 := Complex.Gamma_ne_zero_of_re_pos (by linarith)
+have hcos : Complex.cos ((Real.pi : ℂ) * (1 - s) / 2) ≠ 0 := by
+  rw [Ne, Complex.cos_eq_zero_iff]
+  rintro ⟨k, hk⟩
+  -- three cases on the sign of k, as described above
+  ...
+exact (mul_ne_zero (mul_ne_zero (mul_ne_zero h2pi hG) hcos) hz') key.symm</code></pre></details>
+
+<h2 id="rh-of-every">Step 2: zeta is an L-function</h2>
+<pre><code>theorem Formalism.VW.rh_of_every (h : UpperTheory.EveryCharacter) : RiemannHypothesis :=
+  Formalism.VW.rh_of_right fun s hs hs1 =&gt; by
+    have := h 1 (1 : DirichletCharacter ℂ 1) s hs (Or.inr hs1)
+    rwa [LFunction_modOne_eq] at this</code></pre>
+<p>Apply <code>EveryCharacter</code> to the trivial character modulo 1. Mathlib's <code>LFunction_modOne_eq</code> says its L-function is <code>riemannZeta</code>. This gives exactly the hypothesis of Step 1.</p>
+
+<h2 id="critline">Step 3: GRH for primitive characters</h2>
+<p><code>Formalism.VW.critLine</code> proves the strip statement for a primitive \(\chi\). Suppose \(L(s,\chi) = 0\) with \(0 &lt; \operatorname{Re} s &lt; 1\).</p>
+<ol class="steps">
+<li><strong>Right of the line.</strong> If \(\operatorname{Re} s &gt; \tfrac12\), <code>EveryCharacter</code> says \(L(s,\chi) \ne 0\). Contradiction.</li>
+<li><strong>Gamma factor is harmless.</strong> Mathlib writes \(L(s,\chi) = \Lambda(s,\chi) / \gamma_\chi(s)\) (<code>LFunction_eq_completed_div_gammaFactor</code>), where \(\gamma_\chi(s) = \Gamma_{\mathbb R}(s)\) or \(\Gamma_{\mathbb R}(s+1)\) by parity. The lemma <code>gammaFactor_ne_zero</code> shows \(\gamma_\chi(s) \ne 0\) when \(\operatorname{Re} s &gt; 0\). So \(\Lambda(s,\chi) = 0\).</li>
+<li><strong>Reflect.</strong> \(\chi^{-1}\) is primitive too (same conductor, <code>conductor_inv</code>). The functional equation <code>IsPrimitive.completedLFunction_one_sub</code> for \(\chi^{-1}\) expresses \(\Lambda(1-s,\chi^{-1})\) as a nonzero constant times \(\Lambda(s,\chi)\), hence \(\Lambda(1-s,\chi^{-1}) = 0\) and so \(L(1-s,\chi^{-1}) = 0\).</li>
+<li><strong>Contradiction.</strong> If \(\operatorname{Re} s &lt; \tfrac12\) then \(\operatorname{Re}(1-s) &gt; \tfrac12\), and <code>EveryCharacter</code> applied to \(\chi^{-1}\) at \(1-s\) forbids this zero.</li>
+</ol>
+<details><summary>Show the full Lean source</summary>
+<pre><code>theorem Formalism.VW.critLine (h : UpperTheory.EveryCharacter) (N : ℕ) [NeZero N]
+    (χ : DirichletCharacter ℂ N) (hχ : χ.IsPrimitive) (s : ℂ)
+    (h0 : 0 &lt; s.re) (h1 : s.re &lt; 1) (hz : LFunction χ s = 0) : s.re = 1 / 2 := by
+  have hs0 : s ≠ 0 := fun e =&gt; by simp [e] at h0
+  have hs1 : s ≠ 1 := fun e =&gt; by simp [e] at h1
+  by_contra hne
+  rcases lt_or_gt_of_ne hne with hlt | hgt
+  · have hinv : χ⁻¹.IsPrimitive := by
+      rw [isPrimitive_def, conductor_inv]; exact hχ
+    have hc : completedLFunction χ s = 0 := by
+      rw [LFunction_eq_completed_div_gammaFactor χ s (Or.inl hs0)] at hz
+      exact (div_eq_zero_iff.1 hz).resolve_right (Formalism.VW.gammaFactor_ne_zero χ h0)
+    have hfe := hinv.completedLFunction_one_sub s
+    rw [inv_inv, hc, mul_zero] at hfe
+    have h2 : (1 - s) ≠ 0 := sub_ne_zero.2 hs1.symm
+    refine h N χ⁻¹ (1 - s) (by rw [sub_re, one_re]; linarith)
+      (Or.inr fun e =&gt; hs0 (by linear_combination -e)) ?_
+    rw [LFunction_eq_completed_div_gammaFactor χ⁻¹ (1 - s) (Or.inl h2), hfe, zero_div]
+  · exact h N χ s hgt (Or.inr hs1) hz</code></pre></details>
+
+<h2 id="strip">Step 4: GRH for all characters</h2>
+<p><code>Claim.strip</code> in <code>ClaimStrip.lean</code> removes the primitivity assumption. Given any \(\chi\) mod \(N\) and a zero in the strip:</p>
+<ul>
+<li><code>prim_zero</code>: the zero is also a zero of the primitive character \(\chi^*\) inducing \(\chi\). Mathlib's <code>LFunction_changeLevel</code> gives \(L(s,\chi) = L(s,\chi^*) \prod_{p \mid N} (1 - \chi^*(p) p^{-s})\), and <code>factor_ne_zero</code> shows each Euler factor is nonzero when \(\operatorname{Re} s &gt; 0\), because \(|\chi^*(p)\,p^{-s}| \le p^{-\operatorname{Re} s} &lt; 1\).</li>
+<li><code>prim_reflect</code>: the argument of Step 3 sends this to a zero of \(L(1-s, (\chi^*)^{-1})\).</li>
+<li>If \(\operatorname{Re} s &lt; \tfrac12\), <code>EveryCharacter</code> at modulus <code>χ.conductor</code> rules that out; if \(\operatorname{Re} s &gt; \tfrac12\), it rules out the original zero directly.</li>
+</ul>
+<p>The same file also gives a second, independent derivation of RH, <code>Claim.zeta</code>, via the completed zeta function <code>completedRiemannZeta_one_sub</code>, and records <code>Claim.zeta_iff : Zeta ↔ RiemannHypothesis := Iff.rfl</code>.</p>
+
+<h2 id="deep">Where the depth is</h2>
+<p>All of the above is routine analytic number theory, already supported by Mathlib. The entire weight of the project lies in the single term</p>
+<pre><code>theorem UpperTheory.FinalTheorems.everyCharacter : UpperTheory.EveryCharacter :=
+  UpperTheory.FinalTheorems.everyCharacter_of_row
+    UpperTheory.Gal.Int.galoisLocalGlobalStrong_recParameter
+
+theorem UpperTheory.FinalTheorems.everyCharacter_of_row
+    (h : UpperTheory.GalStar.Row0b fun h rc =&gt; UpperTheory.Zero.LLC.IsRecT h rc) :
+    UpperTheory.EveryCharacter :=
+  UpperTheory.LiteratureTheorems.every_character_of_literature_of_vWin
+    ⟨h, UpperTheory.Zero.LLC.recTExists, h⟩ (UpperTheory.One.vwin_of_row h)</code></pre>
+<p>Its four ingredients are named after a Galois local global compatibility statement (<code>galoisLocalGlobalStrong_recParameter</code>), the existence of local Langlands parameters (<code>Zero.LLC.recTExists</code>), a quantitative condition <code>VWin</code>, and a bundle of literature inputs (<code>LiteratureTheorems</code>). Each of these is itself a <em>proved theorem</em> inside the project, not an assumption: the text search found no <code>axiom</code> or <code>sorry</code> anywhere.</p>
+
+<h3 id="reduction-primitive">One layer down: reduction to primitive characters</h3>
+<p>Next to the main route, <code>CharacterBoxes/EveryCharacter.lean</code> shows the shape of the inner argument. The project works with a structure of primitive characters,</p>
+<pre><code>structure Formalism.HC.PChar where
+  N : ℕ
+  [ne : NeZero N]
+  χ : DirichletCharacter ℂ N
+  prim : χ.IsPrimitive
+
+def PChar.ZeroFreeAbove (ψ : PChar) (θ : ℝ) : Prop :=
+  ∀ s : ℂ, θ &lt; s.re → DirichletCharacter.LFunction ψ.χ s ≠ 0
+
+def ZeroFreeAll : Prop := ZeroFreeOn fun _ =&gt; True   -- every ψ is zero free above 1/2</code></pre>
+<p>and <code>UpperTheory.Top.imprimitive : ZeroFreeAll → EveryCharacter</code> passes from primitive to all characters with the same Euler factor argument as Step 4. The quantitative hypothesis is</p>
+<pre><code>def VWin : Prop := ∀ ψ : PChar, VWinAt ψ 401</code></pre>
+<p>where <code>VWinAt</code> asks, for every small \(\varepsilon \in (0, \tfrac1{52})\) and scales \(X\), for bounds <code>VVle</code> on certain number fields attached to \(\psi\) (<code>IsChiField</code>) in a window \(Y \le x \le Y^2\). Interpreting these objects would require reading far more of the code and is left to experts. The <a href="note.html">note</a> gives Alpöge's informal description of the ideas.</p>
+</main>
+<aside class="toc"></aside>
+</div>
+</body>
+</html>

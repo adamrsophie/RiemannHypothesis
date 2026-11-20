@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FAQ · RH in Lean</title>
+<meta name="description" content="Frequently asked questions about the Lean formalization of the Riemann Hypothesis: status, size, scope, provenance and copyright.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<link rel="stylesheet" href="assets/style.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<script defer src="assets/site.js"></script>
+</head>
+<body>
+<div class="layout">
+<main class="content">
+<p class="eyebrow">Help</p>
+<h1>Frequently asked questions</h1>
+<p class="lede">Short answers to the questions people ask first.</p>
+
+<h2 id="status">Status</h2>
+<h3 id="proved">Is the Riemann Hypothesis proved?</h3>
+<p>It is <em>claimed</em> to be. If <code>lake build Main</code> succeeds and <code>#print axioms riemannHypothesis</code> lists only Lean's three standard axioms, then the Lean kernel has checked a proof of Mathlib's statement of RH, and that is very strong evidence. This site has not run those checks. See <a href="verify.html">Verify</a>.</p>
+
+<h3 id="human">Does anyone understand the proof?</h3>
+<p>Not fully yet, by the author's own account. The note says Alpöge has not yet "mastered a massive neighbourhood around its mathematics", that parts were found by Claude, and that he intends to understand, simplify and write it up. A formal proof can be correct before it is understood; understanding is a separate, later achievement.</p>
+
+<h3 id="trust">Why should a formal proof be believed if no one has read it?</h3>
+<p>Because correctness reduces to three small things: the Lean kernel, the Mathlib definitions used in the statement, and the absence of extra axioms. None of these depend on the 175,000 proof files. See <a href="statements.html#trust">What you have to trust</a>.</p>
+
+<h2 id="scope">Scope</h2>
+<h3 id="grh">Does it prove GRH?</h3>
+<p>It claims GRH for Dirichlet L-functions: all zeros in \(0 &lt; \operatorname{Re} s &lt; 1\) of \(L(s,\chi)\), for every Dirichlet character \(\chi\), lie on \(\operatorname{Re} s = \tfrac12\). It does not cover L-functions of general number fields, modular forms, or other automorphic representations.</p>
+
+<h3 id="erh">What about the Extended Riemann Hypothesis?</h3>
+<p>Not included. The note says Alpöge expects it "with more time".</p>
+
+<h3 id="consequences">What follows if it is correct?</h3>
+<p>Every theorem in the literature conditional on RH or GRH for Dirichlet L-functions becomes unconditional, for example sharp error terms in the prime number theorem and in its version for arithmetic progressions, and the \(O(\log^2 N)\) bound for the least quadratic nonresidue, which makes the Miller primality test deterministic in polynomial time.</p>
+
+<h2 id="size">Size</h2>
+<h3 id="why-big">Why is it so large?</h3>
+<p>The note says "an astounding amount of mathematics is present in the argument", touching automorphic forms on higher rank groups, theta correspondences, Iwasawa theory, Arakelov geometry and more. Most of this was not in Mathlib, so it had to be formalized from scratch. The author also writes that he may have "baked lots of strange suboptimal choices into the argument" and expects much shorter proofs to follow.</p>
+
+<h3 id="build-time">How long does it take to build?</h3>
+<p>Unknown here. Expect many hours on a large machine. If you build it, please <a href="verify.html#report">report your numbers</a>.</p>
+
+<h2 id="repo">This repository</h2>
+<h3 id="modified">Has the code been modified?</h3>
+<p>No. The <code>lean/</code> directory is the archive exactly as distributed, verified by git tree hash against another independent mirror (<a href="https://github.com/jsmorph/rh">jsmorph/rh</a>). Only <code>README.md</code>, <code>.gitignore</code> and this website in <code>docs/</code> were added.</p>
+
+<h3 id="original">Where is the original?</h3>
+<p>Alpöge distributed it as <code>https://alpo.ge/lean.tar.gz.part01</code> through <code>part14</code>, linked from the first footnote of <a href="https://alpo.ge/remark.pdf">remark.pdf</a>. The joined archive is 239,275,554 bytes.</p>
+
+<h3 id="affiliation">Is this site affiliated with the author?</h3>
+<p>No. It is an independent, unofficial guide.</p>
+
+<h3 id="license">What is the license?</h3>
+<p>The archive contains no license file, so no license is granted here, and copyright in the Lean code stays with Levent Alpöge. This mirror exists for study and verification and will be taken down if the author asks.</p>
+
+<h3 id="errors">I found a mistake on this site.</h3>
+<p>Please open an issue on the <a href="https://github.com/adamrsophie/RiemannHypothesis/issues">repository</a>.</p>
+</main>
+<aside class="toc"></aside>
+</div>
+</body>
+</html>
